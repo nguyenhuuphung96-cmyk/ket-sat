@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Két sắt – Mật khẩu và hình ảnh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EEEC; --surface:#F8FBFA; --ink:#14232B; --muted:#586C72; --line:#C6D3D0; --soft:#DAE5E2;
+  --btn:#0F3B45; --btn-ink:#F2F7F6; --accent:#C98A1B; --danger:#B3382C; --focus:#B97A0E;
+  --shadow:0 10px 30px rgba(15,59,69,.18);
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1619; --surface:#142126; --ink:#E6EFEE; --muted:#8FA4A9; --line:#26383D; --soft:#1C2D32;
+    --btn:#E2A83F; --btn-ink:#1A1203; --accent:#E2A83F; --danger:#F08072; --focus:#E2A83F;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1619; --surface:#142126; --ink:#E6EFEE; --muted:#8FA4A9; --line:#26383D; --soft:#1C2D32;
+  --btn:#E2A83F; --btn-ink:#1A1203; --accent:#E2A83F; --danger:#F08072; --focus:#E2A83F;
+  --shadow:0 10px 30px rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%;
+}
+body::before{
+  content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px);
+  background:var(--bg); z-index:10;
+}
+[hidden]{ display:none !important; }
+button,input,textarea{ font:inherit; color:inherit; }
+:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; border-radius:6px; }
+
+/* ---------- Buttons ---------- */
+.btn{
+  appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  padding:10px 16px; border-radius:10px; font-weight:600; cursor:pointer; min-height:44px;
+}
+.btn:hover{ border-color:var(--muted); }
+.btn.primary{ background:var(--btn); color:var(--btn-ink); border-color:var(--btn); }
+.btn.danger{ color:var(--danger); border-color:var(--danger); background:transparent; }
+.btn.small{ padding:6px 12px; min-height:36px; font-size:14px; }
+.btn:disabled{ opacity:.6; cursor:default; }
+.link{
+  appearance:none; background:none; border:0; color:var(--muted); text-decoration:underline;
+  cursor:pointer; padding:8px; font-size:14px;
+}
+
+/* ---------- Lock screen ---------- */
+.lock{
+  min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:32px 20px; text-align:center;
+}
+.dial{ position:relative; width:176px; height:176px; margin-bottom:20px; color:var(--ink); }
+.dial svg{ position:absolute; inset:0; width:100%; height:100%; }
+.dial .ring{ transition:transform .75s cubic-bezier(.65,0,.25,1); }
+.dial.spin .ring{ transform:rotate(300deg); }
+.dial .ring line{ stroke:currentColor; stroke-width:2; stroke-linecap:round; opacity:.55; }
+.dial .ring line.big{ stroke-width:3; opacity:1; }
+.dial .marker{ fill:var(--accent); }
+.dial .glyph{ fill:none; stroke:currentColor; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
+.lock h1{ margin:0 0 6px; font-size:28px; line-height:1.2; font-weight:700; letter-spacing:-.01em; }
+.lock p.hint{ margin:0 0 22px; color:var(--muted); max-width:34ch; font-size:15px; }
+.lock form{ width:100%; max-width:340px; display:flex; flex-direction:column; gap:12px; text-align:left; }
+.err{ min-height:1.4em; margin:0; color:var(--danger); font-size:14px; font-weight:500; }
+
+label.field{ display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:600; }
+input[type=text],input[type=password],input[type=search],textarea{
+  width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); font-weight:400; font-size:16px;
+}
+textarea{ resize:vertical; min-height:76px; }
+input::placeholder,textarea::placeholder{ color:var(--muted); opacity:.8; }
+
+/* ---------- App shell ---------- */
+.shell{ max-width:720px; margin:0 auto; padding:0 16px 120px; }
+.topbar{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg);
+  padding:14px 0 10px; border-bottom:1px solid var(--line);
+}
+.topbar .row1{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.topbar h2{ margin:0; font-size:22px; font-weight:700; letter-spacing:-.01em; }
+.filters{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.chip{
+  appearance:none; border:1px solid var(--line); background:transparent; color:var(--muted);
+  padding:6px 14px; border-radius:999px; font-weight:600; font-size:14px; cursor:pointer; min-height:36px;
+}
+.chip[aria-pressed="true"]{ background:var(--btn); border-color:var(--btn); color:var(--btn-ink); }
+
+.rows{ display:flex; flex-direction:column; margin-top:6px; }
+.item{
+  appearance:none; background:none; border:0; border-bottom:1px solid var(--line); width:100%;
+  display:flex; align-items:center; gap:14px; padding:12px 4px; text-align:left; cursor:pointer;
+}
+.item:hover{ background:var(--soft); }
+.lead{
+  flex:0 0 auto; width:52px; height:52px; border-radius:12px; display:grid; place-items:center;
+  color:#fff; font-weight:700; font-size:20px; overflow:hidden; background:var(--soft);
+}
+.lead img{ width:100%; height:100%; object-fit:cover; display:block; }
+.item .txt{ min-width:0; flex:1; }
+.item .t{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.item .s{ color:var(--muted); font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-top:14px; }
+.tile{ appearance:none; background:none; border:0; padding:0; text-align:left; cursor:pointer; }
+.tile .pic{ aspect-ratio:1; border-radius:12px; overflow:hidden; background:var(--soft); border:1px solid var(--line); }
+.tile .pic img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tile .t{ margin-top:6px; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.empty{ text-align:center; padding:56px 12px; color:var(--muted); }
+.empty p{ margin:0 0 16px; }
+
+.fab{
+  position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); z-index:6;
+  box-shadow:var(--shadow); padding:12px 20px; border-radius:999px; min-height:48px;
+}
+.note-warn{ background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; margin:12px 0 0; }
+
+/* ---------- Dialogs ---------- */
+dialog{
+  background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:16px;
+  padding:0; width:min(520px, calc(100% - 24px)); max-height:90vh; max-height:90dvh; box-shadow:var(--shadow);
+}
+dialog::backdrop{ background:rgba(8,16,19,.55); }
+.dlg{ padding:20px; display:flex; flex-direction:column; gap:14px; }
+.dlg h3{ margin:0; font-size:19px; font-weight:700; }
+.dlg .actions{ display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:4px; }
+.seg{ display:flex; gap:8px; }
+.seg .chip{ flex:1; }
+.pwrow{ display:flex; gap:8px; }
+.pwrow input{ flex:1; min-width:0; }
+.picker{
+  border:1px dashed var(--muted); border-radius:12px; padding:14px; display:flex; flex-direction:column;
+  align-items:center; gap:10px; text-align:center; color:var(--muted); font-size:14px;
+}
+.picker img{ max-width:100%; max-height:240px; border-radius:8px; display:block; }
+.kv{ display:flex; align-items:center; gap:10px; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
+.kv .k{ font-size:13px; color:var(--muted); }
+.kv .v{ font-weight:500; word-break:break-all; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.kv .btns{ display:flex; gap:6px; flex:0 0 auto; }
+.viewimg{ width:100%; border-radius:10px; display:block; background:var(--soft); }
+.notebox{ white-space:pre-wrap; word-break:break-word; color:var(--muted); font-size:15px; }
+
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:10px; font-size:14px; font-weight:500;
+  z-index:50; opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.toast.show{ opacity:1; }
+@media (prefers-reduced-motion: reduce){
+  .dial .ring{ transition:none; }
+  .toast{ transition:none; }
+}
+</style>
+</head>
+<body>
+
+<main id="lock" class="lock" hidden>
+  <div class="dial" id="dial" aria-hidden="true">
+    <svg viewBox="0 0 200 200" class="ringsvg"><g class="ring" id="ring" style="transform-origin:100px 100px"></g></svg>
+    <svg viewBox="0 0 200 200"><path class="marker" d="M100 0 L93 12 H107 Z"/></svg>
+    <svg viewBox="0 0 200 200"><rect class="glyph" x="76" y="98" width="48" height="38" rx="7"/><path class="glyph" d="M86 98 V86 a14 14 0 0 1 28 0 V98"/><circle cx="100" cy="117" r="3.5" fill="currentColor"/></svg>
+  </div>
+  <h1 id="lockTitle">Mở két</h1>
+  <p class="hint" id="lockHint"></p>
+  <form id="lockForm" autocomplete="off">
+    <label class="field">Mật khẩu chủ
+      <input type="password" id="pw1" autocomplete="current-password" required>
+    </label>
+    <label class="field" id="pw2wrap" hidden>Nhập lại mật khẩu chủ
+      <input type="password" id="pw2" autocomplete="new-password">
+    </label>
+    <p class="err" id="lockErr" role="alert"></p>
+    <button class="btn primary" id="lockBtn" type="submit">Mở két</button>
+  </form>
+  <button class="link" id="resetBtn" type="button" hidden>Xoá két và bắt đầu lại</button>
+</main>
+
+<div id="app" hidden>
+  <div class="shell">
+    <header class="topbar">
+      <div class="row1">
+        <h2>Két sắt</h2>
+        <button class="btn small" id="lockNow" type="button">Khoá két</button>
+      </div>
+      <input type="search" id="search" placeholder="Tìm theo tên, tài khoản hoặc ghi chú" aria-label="Tìm kiếm">
+      <div class="filters" id="filters">
+        <button class="chip" data-f="all" aria-pressed="true" type="button">Tất cả</button>
+        <button class="chip" data-f="password" aria-pressed="false" type="button">Mật khẩu</button>
+        <button class="chip" data-f="image" aria-pressed="false" type="button">Hình ảnh</button>
+      </div>
+    </header>
+    <div id="memNote" class="note-warn" hidden>Trình duyệt này không cho phép lưu trữ lâu dài. Dữ liệu sẽ mất khi bạn đóng trang.</div>
+    <div id="list"></div>
+  </div>
+  <button class="btn primary fab" id="addBtn" type="button">+ Thêm mục mới</button>
+</div>
+
+<!-- Editor -->
+<dialog id="editor">
+  <div class="dlg">
+    <h3 id="editTitle">Thêm mục mới</h3>
+    <div class="seg" id="typeSeg">
+      <button class="chip" data-t="password" aria-pressed="true" type="button">Mật khẩu</button>
+      <button class="chip" data-t="image" aria-pressed="false" type="button">Hình ảnh</button>
+    </div>
+    <label class="field">Tên
+      <input type="text" id="fTitle" placeholder="Ví dụ: Facebook, CCCD mặt trước" maxlength="120">
+    </label>
+    <div id="gPass" style="display:flex;flex-direction:column;gap:14px">
+      <label class="field">Tài khoản
+        <input type="text" id="fUser" autocomplete="off" placeholder="Email hoặc tên đăng nhập">
+      </label>
+      <div class="field">
+        <label for="fPass">Mật khẩu</label>
+        <div class="pwrow">
+          <input type="password" id="fPass" autocomplete="off">
+          <button class="btn small" id="togglePass" type="button">Hiện</button>
+        </div>
+        <button class="btn small" id="genPass" type="button" style="align-self:flex-start">Tạo mật khẩu ngẫu nhiên</button>
+      </div>
+    </div>
+    <div id="gImage" hidden>
+      <div class="picker" id="picker">
+        <img id="pickPrev" alt="Ảnh đã chọn" hidden>
+        <span id="pickMsg">Chưa chọn ảnh. Ảnh được nén lại và mã hoá trước khi lưu.</span>
+        <button class="btn small" id="pickBtn" type="button">Chọn ảnh</button>
+        <input type="file" id="fileIn" accept="image/*" hidden>
+      </div>
+    </div>
+    <label class="field">Ghi chú
+      <textarea id="fNote" placeholder="Không bắt buộc"></textarea>
+    </label>
+    <p class="err" id="editErr" role="alert"></p>
+    <div class="actions">
+      <button class="btn" id="editCancel" type="button">Huỷ</button>
+      <button class="btn primary" id="editSave" type="button">Lưu</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Viewer -->
+<dialog id="viewer">
+  <div class="dlg" id="viewBody"></div>
+</dialog>
+
+<!-- Confirm -->
+<dialog id="confirmDlg">
+  <div class="dlg">
+    <h3 id="cTitle"></h3>
+    <p id="cText" style="margin:0;color:var(--muted)"></p>
+    <div class="actions">
+      <button class="btn" id="cNo" type="button">Giữ lại</button>
+      <button class="btn danger" id="cYes" type="button">Xoá</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const IDLE_MS = 5 * 60 * 1000;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let db = null, persistent = true;
+  let key = null, items = [], filter = 'all', query = '';
+  let mode = 'unlock';           // 'create' | 'unlock'
+  let idleTimer = null, toastTimer = null;
+  let editing = null, currentType = 'password', pendingImage = null;
+  let viewingId = null;
+
+  /* ---------- Storage (IndexedDB, with in-memory fallback) ---------- */
+  const mem = { meta: new Map(), items: new Map() };
+
+  function openDB() {
+    return new Promise((res, rej) => {
+      if (!window.indexedDB) return rej(new Error('no idb'));
+      const r = indexedDB.open('ket-sat', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        d.createObjectStore('meta');
+        d.createObjectStore('items', { keyPath: 'id' });
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => rej(new Error('blocked'));
+    });
+  }
+  function tx(names, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = db.transaction(names, mode);
+      let r;
+      try { r = fn(t); } catch (e) { return rej(e); }
+      t.oncomplete = () => res(r && r.result);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  const store = {
+    async get(n, k) { return db ? tx(n, 'readonly', t => t.objectStore(n).get(k)) : mem[n].get(k); },
+    async put(n, v, k) {
+      if (!db) { mem[n].set(n === 'items' ? v.id : k, v); return; }
+      return tx(n, 'readwrite', t => n === 'items' ? t.objectStore(n).put(v) : t.objectStore(n).put(v, k));
+    },
+    async del(n, k) { if (!db) { mem[n].delete(k); return; } return tx(n, 'readwrite', t => t.objectStore(n).delete(k)); },
+    async all(n) { return db ? tx(n, 'readonly', t => t.objectStore(n).getAll()) : [...mem[n].values()]; },
+    async clearAll() {
+      if (!db) { mem.meta.clear(); mem.items.clear(); return; }
+      return tx(['meta', 'items'], 'readwrite', t => { t.objectStore('meta').clear(); t.objectStore('items').clear(); });
+    }
+  };
+
+  /* ---------- Crypto (PBKDF2 + AES-GCM) ---------- */
+  async function deriveKey(pw, salt) {
+    const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+  }
+  async function seal(bytes) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes));
+    const out = new Uint8Array(12 + ct.length);
+    out.set(iv); out.set(ct, 12);
+    return out;
+  }
+  async function unseal(buf) {
+    const b = new Uint8Array(buf);
+    return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b.slice(0, 12) }, key, b.slice(12)));
+  }
+  function toDataUrl(bytes) {
+    return new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => rej(fr.error);
+      fr.readAsDataURL(new Blob([bytes], { type: 'image/jpeg' }));
+    });
+  }
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+  /* ---------- Image processing ---------- */
+  function loadImage(file) {
+    return new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onerror = () => rej(fr.error);
+      fr.onload = () => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => rej(new Error('decode'));
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  function toJpeg(img, max, q) {
+    const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * s)), h = Math.max(1, Math.round(img.naturalHeight * s));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+    x.drawImage(img, 0, 0, w, h);
+    return new Promise((res, rej) => c.toBlob(async b => {
+      if (!b) return rej(new Error('blob'));
+      res(new Uint8Array(await b.arrayBuffer()));
+    }, 'image/jpeg', q));
+  }
+  async function processImage(file) {
+    const img = await loadImage(file);
+    return { full: await toJpeg(img, 1600, 0.85), thumb: await toJpeg(img, 360, 0.8) };
+  }
+
+  /* ---------- UI helpers ---------- */
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  async function copy(text, label) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const t = document.createElement('textarea');
+      t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); } catch (e2) {}
+      t.remove();
+    }
+    toast('Đã sao chép ' + label);
+  }
+  function genPassword(len = 18) {
+    const sets = ['abcdefghijkmnopqrstuvwxyz', 'ABCDEFGHJKLMNPQRSTUVWXYZ', '23456789', '!@#$%^&*-_=+?'];
+    const all = sets.join('');
+    const rnd = n => {
+      const lim = Math.floor(0x100000000 / n) * n;
+      let v; do { v = crypto.getRandomValues(new Uint32Array(1))[0]; } while (v >= lim);
+      return v % n;
+    };
+    const out = sets.map(s => s[rnd(s.length)]);
+    while (out.length < len) out.push(all[rnd(all.length)]);
+    for (let i = out.length - 1; i > 0; i--) { const j = rnd(i + 1); [out[i], out[j]] = [out[j], out[i]]; }
+    return out.join('');
+  }
+  function confirmDialog(title, text) {
+    return new Promise(res => {
+      $('cTitle').textContent = title; $('cText').textContent = text;
+      const d = $('confirmDlg');
+      const done = v => { $('cYes').onclick = $('cNo').onclick = null; d.onclose = null; d.close(); res(v); };
+      $('cYes').onclick = () => done(true);
+      $('cNo').onclick = () => done(false);
+      d.onclose = () => res(false);
+      d.showModal();
+    });
+  }
+  const hueSet = [190, 160, 35, 8, 262, 215];
+  function monogram(title) {
+    let h = 0; for (const ch of title) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    const el = document.createElement('div');
+    el.className = 'lead';
+    el.style.background = 'hsl(' + hueSet[h % hueSet.length] + ' 38% 32%)';
+    el.textContent = (title.trim()[0] || '?').toUpperCase();
+    return el;
+  }
+
+  /* ---------- Lock screen ---------- */
+  (function buildDial() {
+    const ring = $('ring'); let h = '';
+    for (let i = 0; i < 60; i++) {
+      const big = i % 5 === 0;
+      h += '<line class="' + (big ? 'big' : '') + '" x1="100" y1="' + (big ? 18 : 22) + '" x2="100" y2="30" transform="rotate(' + (i * 6) + ' 100 100)"/>';
+    }
+    ring.innerHTML = h;
+  })();
+
+  function showLock(opts = {}) {
+    $('app').hidden = true;
+    $('lock').hidden = false;
+    $('dial').classList.remove('spin');
+    $('pw1').value = ''; $('pw2').value = ''; $('lockErr').textContent = '';
+    $('lockBtn').disabled = false;
+    if (mode === 'create') {
+      $('lockTitle').textContent = 'Tạo mật khẩu chủ';
+      $('lockHint').textContent = 'Mật khẩu chủ là chìa khoá duy nhất của két. Nếu quên, không có cách nào khôi phục dữ liệu.';
+      $('pw2wrap').hidden = false; $('pw2').required = true;
+      $('pw1').autocomplete = 'new-password';
+      $('lockBtn').textContent = 'Tạo két';
+      $('resetBtn').hidden = true;
+    } else {
+      $('lockTitle').textContent = 'Mở két';
+      $('lockHint').textContent = opts.msg || 'Nhập mật khẩu chủ để xem mật khẩu và hình ảnh của bạn.';
+      $('pw2wrap').hidden = true; $('pw2').required = false;
+      $('pw1').autocomplete = 'current-password';
+      $('lockBtn').textContent = 'Mở két';
+      $('resetBtn').hidden = false;
+    }
+    setTimeout(() => $('pw1').focus(), 50);
+  }
+
+  async function enterApp() {
+    await loadItems();
+    $('dial').classList.add('spin');
+    await new Promise(r => setTimeout(r, reduceMotion ? 0 : 700));
+    $('lock').hidden = true;
+    $('app').hidden = false;
+    $('memNote').hidden = persistent;
+    render();
+    armIdle();
+  }
+
+  $('lockForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('lockErr'); err.textContent = '';
+    const pw = $('pw1').value;
+    const btn = $('lockBtn');
+    try {
+      if (mode === 'create') {
+        if (pw.length < 8) { err.textContent = 'Mật khẩu chủ cần ít nhất 8 ký tự.'; return; }
+        if (pw !== $('pw2').value) { err.textContent = 'Hai mật khẩu chưa giống nhau.'; return; }
+        btn.disabled = true; btn.textContent = 'Đang tạo…';
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        key = await deriveKey(pw, salt);
+        await store.put('meta', salt, 'salt');
+        await store.put('meta', await seal(enc.encode('ket-sat-ok')), 'check');
+        mode = 'unlock';
+        await enterApp();
+      } else {
+        btn.disabled = true; btn.textContent = 'Đang mở…';
+        const salt = await store.get('meta', 'salt');
+        const check = await store.get('meta', 'check');
+        key = await deriveKey(pw, salt);
+        try {
+          const ok = dec.decode(await unseal(check));
+          if (ok !== 'ket-sat-ok') throw new Error('bad');
+        } catch (x) {
+          key = null;
+          err.textContent = 'Sai mật khẩu chủ. Hãy thử lại.';
+          btn.disabled = false; btn.textContent = 'Mở két';
+          $('pw1').select();
+          return;
+        }
+        await enterApp();
+      }
+    } catch (x) {
+      key = null;
+      err.textContent = 'Không thể thực hiện. Hãy tải lại trang và thử lại.';
+      btn.disabled = false;
+      btn.textContent = mode === 'create' ? 'Tạo két' : 'Mở két';
+    }
+  });
+
+  $('resetBtn').addEventListener('click', async () => {
+    const ok = await confirmDialog('Xoá toàn bộ két?', 'Tất cả mật khẩu và hình ảnh đã lưu sẽ bị xoá vĩnh viễn. Không thể hoàn tác.');
+    if (!ok) return;
+    await store.clearAll();
+    mode = 'create';
+    showLock();
+  });
+
+  function lockNow(msg) {
+    key = null; items = []; viewingId = null;
+    $('list').innerHTML = '';
+    document.querySelectorAll('dialog[open]').forEach(d => d.close());
+    $('viewBody').innerHTML = '';
+    clearTimeout(idleTimer);
+    mode = 'unlock';
+    showLock({ msg });
+  }
+  $('lockNow').addEventListener('click', () => lockNow());
+
+  function armIdle() {
+    clearTimeout(idleTimer);
+    if (!key) return;
+    idleTimer = setTimeout(() => lockNow('Két đã tự khoá vì bạn không thao tác trong 5 phút.'), IDLE_MS);
+  }
+  ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(ev => addEventListener(ev, () => { if (key) armIdle(); }, { passive: true }));
+
+  /* ---------- Data ---------- */
+  async function loadItems() {
+    const rows = await store.all('items');
+    const out = [];
+    for (const r of rows) {
+      try {
+        const m = JSON.parse(dec.decode(await unseal(r.meta)));
+        const it = { id: r.id, type: r.type, created: r.created, title: m.title || '', user: m.user || '', pass: m.pass || '', note: m.note || '' };
+        if (r.thumb) it.thumb = await toDataUrl(await unseal(r.thumb));
+        out.push(it);
+      } catch (e) { /* skip unreadable record */ }
+    }
+    out.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+    items = out;
+  }
+
+  /* ---------- List ---------- */
+  function render() {
+    const list = $('list');
+    const q = query.trim().toLowerCase();
+    const shown = items.filter(i =>
+      (filter === 'all' || i.type === filter) &&
+      (!q || (i.title + ' ' + i.user + ' ' + i.note).toLowerCase().includes(q))
+    );
+    list.innerHTML = '';
+    list.className = filter === 'image' ? 'grid' : 'rows';
+    if (!shown.length) {
+      list.className = '';
+      const box = document.createElement('div');
+      box.className = 'empty';
+      const p = document.createElement('p');
+      if (!items.length) {
+        p.textContent = 'Két đang trống. Hãy thêm mật khẩu hoặc hình ảnh đầu tiên.';
+        box.appendChild(p);
+        const b = document.createElement('button');
+        b.className = 'btn primary'; b.type = 'button'; b.textContent = 'Thêm mục mới';
+        b.onclick = () => openEditor();
+        box.appendChild(b);
+      } else {
+        p.textContent = 'Không có mục nào khớp với tìm kiếm.';
+        box.appendChild(p);
+      }
+      list.appendChild(box);
+      return;
+    }
+    for (const it of shown) {
+      if (filter === 'image') {
+        const b = document.createElement('button');
+        b.className = 'tile'; b.type = 'button';
+        const pic = document.createElement('div'); pic.className = 'pic';
+        if (it.thumb) { const im = document.createElement('img'); im.src = it.thumb; im.alt = it.title; pic.appendChild(im); }
+        const t = document.createElement('div'); t.className = 't'; t.textContent = it.title;
+        b.append(pic, t);
+        b.onclick = () => openViewer(it.id);
+        list.appendChild(b);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'item'; b.type = 'button';
+        let lead;
+        if (it.type === 'image' && it.thumb) {
+          lead = document.createElement('div'); lead.className = 'lead';
+          const im = document.createElement('img'); im.src = it.thumb; im.alt = ''; lead.appendChild(im);
+        } else lead = monogram(it.title);
+        const txt = document.createElement('div'); txt.className = 'txt';
+        const t = document.createElement('div'); t.className = 't'; t.textContent = it.title;
+        const s = document.createElement('div'); s.className = 's';
+        s.textContent = it.type === 'image' ? 'Hình ảnh' : (it.user || 'Mật khẩu');
+        txt.append(t, s);
+        b.append(lead, txt);
+        b.onclick = () => openViewer(it.id);
+        list.appendChild(b);
+      }
+    }
+  }
+
+  $('search').addEventListener('input', e => { query = e.target.value; render(); });
+  $('filters').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    filter = b.dataset.f;
+    document.querySelectorAll('#filters .chip').forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+    render();
+  });
+
+  /* ---------- Viewer ---------- */
+  async function openViewer(id) {
+    const it = items.find(x => x.id === id); if (!it) return;
+    viewingId = id;
+    const body = $('viewBody'); body.innerHTML = '';
+    const h = document.createElement('h3'); h.textContent = it.title; body.appendChild(h);
+
+    if (it.type === 'password') {
+      body.appendChild(kvRow('Tài khoản', it.user || '—', it.user ? [['Sao chép', () => copy(it.user, 'tài khoản')]] : []));
+      let shown = false;
+      const row = kvRow('Mật khẩu', '••••••••••', []);
+      const val = row.querySelector('.v'), btns = row.querySelector('.btns');
+      const tg = document.createElement('button'); tg.className = 'btn small'; tg.type = 'button'; tg.textContent = 'Hiện';
+      tg.onclick = () => { shown = !shown; val.textContent = shown ? it.pass : '••••••••••'; tg.textContent = shown ? 'Ẩn' : 'Hiện'; };
+      const cp = document.createElement('button'); cp.className = 'btn small'; cp.type = 'button'; cp.textContent = 'Sao chép';
+      cp.onclick = () => copy(it.pass, 'mật khẩu');
+      btns.append(tg, cp);
+      body.appendChild(row);
+    } else {
+      const img = document.createElement('img');
+      img.className = 'viewimg'; img.alt = it.title;
+      if (it.thumb) img.src = it.thumb;
+      body.appendChild(img);
+      try {
+        const rec = await store.get('items', id);
+        if (rec && rec.image) img.src = await toDataUrl(await unseal(rec.image));
+      } catch (e) { toast('Không đọc được ảnh gốc'); }
+    }
+    if (it.note) {
+      const n = document.createElement('div'); n.className = 'notebox'; n.textContent = it.note; body.appendChild(n);
+    }
+    const act = document.createElement('div'); act.className = 'actions';
+    const del = document.createElement('button'); del.className = 'btn danger'; del.type = 'button'; del.textContent = 'Xoá';
+    del.onclick = async () => {
+      const ok = await confirmDialog('Xoá “' + it.title + '”?', 'Mục này sẽ bị xoá vĩnh viễn. Không thể hoàn tác.');
+      if (!ok) return;
+      await store.del('items', it.id);
+      items = items.filter(x => x.id !== it.id);
+      $('viewer').close(); render(); toast('Đã xoá mục');
+    };
+    const ed = document.createElement('button'); ed.className = 'btn'; ed.type = 'button'; ed.textContent = 'Sửa';
+    ed.onclick = () => { $('viewer').close(); openEditor(it); };
+    const cl = document.createElement('button'); cl.className = 'btn primary'; cl.type = 'button'; cl.textContent = 'Đóng';
+    cl.onclick = () => $('viewer').close();
+    act.append(del, ed, cl);
+    body.appendChild(act);
+    if (!$('viewer').open) $('viewer').showModal();
+  }
+  function kvRow(label, value, extra) {
+    const row = document.createElement('div'); row.className = 'kv';
+    const left = document.createElement('div');
+    const k = document.createElement('div'); k.className = 'k'; k.textContent = label;
+    const v = document.createElement('div'); v.className = 'v'; v.textContent = value;
+    left.append(k, v);
+    const btns = document.createElement('div'); btns.className = 'btns';
+    for (const [txt, fn] of extra) {
+      const b = document.createElement('button'); b.className = 'btn small'; b.type = 'button'; b.textContent = txt; b.onclick = fn; btns.appendChild(b);
+    }
+    row.append(left, btns);
+    return row;
+  }
+  $('viewer').addEventListener('close', () => { $('viewBody').innerHTML = ''; });
+
+  /* ---------- Editor ---------- */
+  function setType(t) {
+    currentType = t;
+    document.querySelectorAll('#typeSeg .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.t === t)));
+    $('gPass').hidden = t !== 'password';
+    $('gImage').hidden = t !== 'image';
+  }
+  function setPreview(src) {
+    const im = $('pickPrev');
+    if (src) { im.src = src; im.hidden = false; $('pickMsg').textContent = 'Ảnh đã sẵn sàng để lưu.'; $('pickBtn').textContent = 'Chọn ảnh khác'; }
+    else { im.hidden = true; im.removeAttribute('src'); $('pickMsg').textContent = 'Chưa chọn ảnh. Ảnh được nén lại và mã hoá trước khi lưu.'; $('pickBtn').textContent = 'Chọn ảnh'; }
+  }
+  function openEditor(it) {
+    editing = it || null; pendingImage = null;
+    $('editErr').textContent = '';
+    $('editTitle').textContent = it ? 'Sửa mục' : 'Thêm mục mới';
+    $('typeSeg').hidden = !!it;
+    setType(it ? it.type : (filter === 'image' ? 'image' : 'password'));
+    $('fTitle').value = it ? it.title : '';
+    $('fUser').value = it ? it.user : '';
+    $('fPass').value = it ? it.pass : '';
+    $('fPass').type = 'password'; $('togglePass').textContent = 'Hiện';
+    $('fNote').value = it ? it.note : '';
+    $('fileIn').value = '';
+    setPreview(it && it.type === 'image' ? it.thumb : null);
+    $('editor').showModal();
+    setTimeout(() => $('fTitle').focus(), 50);
+  }
+  $('addBtn').addEventListener('click', () => openEditor());
+  $('typeSeg').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) setType(b.dataset.t); });
+  $('togglePass').addEventListener('click', () => {
+    const p = $('fPass'); const show = p.type === 'password';
+    p.type = show ? 'text' : 'password'; $('togglePass').textContent = show ? 'Ẩn' : 'Hiện';
+  });
+  $('genPass').addEventListener('click', () => {
+    $('fPass').value = genPassword(); $('fPass').type = 'text'; $('togglePass').textContent = 'Ẩn';
+  });
+  $('pickBtn').addEventListener('click', () => $('fileIn').click());
+  $('fileIn').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('editErr').textContent = '';
+    $('pickMsg').textContent = 'Đang xử lý ảnh…';
+    try {
+      pendingImage = await processImage(f);
+      setPreview(await toDataUrl(pendingImage.full));
+    } catch (x) {
+      pendingImage = null;
+      setPreview(editing && editing.type === 'image' ? editing.thumb : null);
+      $('editErr').textContent = 'Không đọc được ảnh này. Hãy chọn tệp JPG, PNG hoặc WebP.';
+    }
+  });
+  $('editCancel').addEventListener('click', () => $('editor').close());
+  $('editSave').addEventListener('click', async () => {
+    const err = $('editErr'); err.textContent = '';
+    const title = $('fTitle').value.trim();
+    if (!title) { err.textContent = 'Hãy nhập tên cho mục này.'; $('fTitle').focus(); return; }
+    const type = editing ? editing.type : currentType;
+    if (type === 'password' && !$('fPass').value) { err.textContent = 'Hãy nhập mật khẩu.'; $('fPass').focus(); return; }
+    const btn = $('editSave'); btn.disabled = true;
+    try {
+      let rec = editing ? await store.get('items', editing.id) : { id: uid(), type, created: Date.now() };
+      const meta = {
+        title,
+        user: type === 'password' ? $('fUser').value.trim() : '',
+        pass: type === 'password' ? $('fPass').value : '',
+        note: $('fNote').value.trim()
+      };
+      rec.meta = await seal(enc.encode(JSON.stringify(meta)));
+      if (type === 'image') {
+        if (pendingImage) { rec.image = await seal(pendingImage.full); rec.thumb = await seal(pendingImage.thumb); }
+        else if (!rec.image) { err.textContent = 'Hãy chọn một ảnh.'; btn.disabled = false; return; }
+      }
+      await store.put('items', rec);
+      await loadItems();
+      render();
+      $('editor').close();
+      toast('Đã lưu');
+    } catch (x) {
+      err.textContent = 'Không lưu được. Bộ nhớ trình duyệt có thể đã đầy.';
+    } finally { btn.disabled = false; }
+  });
+
+  // Close dialogs when tapping the backdrop
+  ['editor', 'viewer'].forEach(id => {
+    const d = $(id);
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+  });
+
+  /* ---------- Boot ---------- */
+  (async function init() {
+    try { db = await openDB(); }
+    catch (e) { db = null; persistent = false; }
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    try {
+      const salt = await store.get('meta', 'salt');
+      mode = salt ? 'unlock' : 'create';
+    } catch (e) { mode = 'create'; }
+    showLock();
+  })();
+})();
+</script>
+</body>
+</html>
